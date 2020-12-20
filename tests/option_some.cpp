@@ -5,10 +5,16 @@
 
 #include "../option.hpp"
 
-TEST_CASE("option constructible from Some(T)") {
+TEST_CASE("option constructible from Some(T) / None") {
     using roc::import::Some;
+    using roc::import::None;
+
     SUBCASE("builtin type") {
         REQUIRE(std::is_constructible<roc::option<int>, decltype(Some(20))>::value);
+    }
+
+    SUBCASE("None") {
+        REQUIRE(std::is_constructible<roc::option<int>, decltype(None)>::value);
     }
 
     SUBCASE("trivial type") {
@@ -52,10 +58,20 @@ TEST_CASE("option constructible from Some(T)") {
 TEST_CASE("Option gets valid values from Some()") {
     using roc::import::Some;
 
-    std::array<roc::option<int>, 15> numbers;
-    for (int i = 0; i < 15; ++i)
-        numbers[i] = Some(i);
-
-//    REQUIRE()
+    roc::option<int> a = Some(52),
+                     b = Some(57),
+                     c = Some(28);
+    REQUIRE(a.contains(52));
+    REQUIRE(b.contains(57));
+    REQUIRE(c.contains(28));
+    REQUIRE(a.is_some());
+    REQUIRE(b.is_some());
+    REQUIRE(c.is_some());
+    REQUIRE(not a.is_none());
+    REQUIRE(not b.is_none());
+    REQUIRE(not c.is_none());
 }
 
+TEST_CASE("Option gets valid values from None") {
+    using roc::import::None;
+}
