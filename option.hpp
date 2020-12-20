@@ -63,7 +63,7 @@ namespace roc
 
             ~option_storage() {
                 if (contains_value)
-                    stored_value.~Value();
+                    stored_value.~T();
             }
 
             T stored_value;
