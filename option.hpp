@@ -80,6 +80,12 @@ namespace roc
             bool contains_value;
         };
 
+        template <typename T, bool Dummy>
+        struct option_storage<T, Dummy, true>
+        {
+            std::decay_t<T>* stored_pointer = nullptr;
+        };
+
 
         template <typename T>
         struct option_opers : option_storage<T>
@@ -87,16 +93,22 @@ namespace roc
             using option_storage<T>::option_storage;
 
             template <typename... Args> constexpr void construct(Args&&... args) noexcept
+                requires(not std::is_reference<T>::value)
             {
                 new(&(this->stored_value)) T(forward<Args>(args)...);
                 this->contains_value = true;
             }
+            template <typename V> constexpr void construct(V& target) noexcept
+            {
+                this->stored_pointer = &target;
+            }
+
             template <typename Moved> constexpr void construct_with(Moved&& rhs) noexcept
+                requires(not std::is_reference<T>::value)
             {
                 new(&(this->stored_value)) T(forward<Moved>(rhs).get());
                 this->contains_value = true;
             }
-
             constexpr void assign(const option_opers& rhs) noexcept
             {
                 if (not this->contains_value && rhs->contains_value)
@@ -166,12 +178,23 @@ namespace roc
                 }
             }
 
-            constexpr bool has_value() const { return this->contains_value; }
+            constexpr bool has_value() const requires (not std::is_reference<T>::value)
+                { return this->contains_value; }
 
-            constexpr T& get() & { return this->stored_value; }
-            constexpr const T& get() const & { return this->stored_value; }
-            constexpr T&& get() && { return this->stored_value; }
-            constexpr const T&& get() const && { return move(this->stored_value); }
+            constexpr bool has_value() const requires (std::is_reference<T>::value)
+                { return this->stored_pointer != nullptr; }
+
+            constexpr T& get() & { return std::is_reference_v<T> ? *(this->stored_pointer) : this->stored_value; }
+
+            constexpr const T& get() const & {
+                if constexpr (std::is_reference<T>::value)
+                    return *(this->stored_pointer);
+                else
+                    return this->stored_value;
+            }
+
+            constexpr T&& get() && { return std::is_reference_v<T> ? *(this->stored_pointer) : this->stored_value; }
+            constexpr const T&& get() const && { return std::is_reference_v<T> ? *(this->stored_pointer) : this->stored_value; }
 
             constexpr void destroy_value() { get().~T(); }
         };
@@ -203,8 +226,12 @@ namespace roc
         template <typename... Args>
         explicit constexpr option(Args&&... args) noexcept { this->construct(forward<Args...>(args...)); }
 
-        constexpr bool is_some() const noexcept { return this->contains_value; }
-        constexpr bool is_none() const noexcept { return !this->contains_value; }
+        // Do NOT allow assigning into these directly
+        option& operator=(const option&) = delete;
+        option& operator=(option&&) = delete;
+
+        constexpr bool is_some() const noexcept { return this->has_value(); } 
+        constexpr bool is_none() const noexcept { return !this->has_value(); }
 
         template <typename U>
         constexpr bool contains(U&& compare) const noexcept { return is_some() && this->stored_value == compare; }
@@ -212,7 +239,6 @@ namespace roc
         constexpr const T& unwrap() const & {
             if (is_none()) THROW_OR_PANIC(); else return this->get();
         }
-
         constexpr T& unwrap() & {
             if (is_none()) THROW_OR_PANIC(); else return this->get();
         }
@@ -220,9 +246,26 @@ namespace roc
         constexpr T&& unwrap() && {
             if (is_none()) THROW_OR_PANIC(); else return this->get();
         }
-
         constexpr const T&& unwrap() const&& {
             if (is_none()) THROW_OR_PANIC(); else return this->get();
+        }
+
+        template <typename U> requires (std::is_copy_constructible<T>::value && std::is_convertible<U&&, T>::value)
+        constexpr const T& unwrap_or(U&& v) const & {
+            return is_some()? unwrap() : static_cast<T>(forward<U>(v));
+        }
+        template <typename U> requires (std::is_copy_constructible<T>::value && std::is_convertible<U&&, T>::value)
+        constexpr T& unwrap_or(U&& v) & {
+            return is_some()? unwrap() : static_cast<T>(forward<U>(v));
+        }
+
+        template <typename U> requires (std::is_copy_constructible<T>::value && std::is_convertible<U&&, T>::value)
+        constexpr const T&& unwrap_or(U&& v) const && {
+            return is_some()? move(unwrap()) : static_cast<T>(forward<U>(v));
+        }
+        template <typename U> requires (std::is_copy_constructible<T>::value && std::is_convertible<U&&, T>::value)
+        constexpr T&& unwrap_or(U&& v) && {
+            return is_some()? move(unwrap()) : static_cast<T>(forward<U>(v));
         }
     };
 
@@ -241,9 +284,9 @@ namespace roc
     std::ostream& operator<<(std::ostream& stream, const option<T>& opt) {
         if (opt.is_some()) {
             if constexpr (std::is_void<T>::value)
-                stream << "()";
+                stream << "Some()";
             else
-                stream << opt.unwrap();
+                stream << "Some(" << opt.unwrap() << ")";
         } else {
             stream << "None";
         }
@@ -254,11 +297,11 @@ namespace roc
 namespace roc::import
 {
     template <typename T>
-    option<T> Some(T&& t) {
+    inline constexpr option<T> Some(T&& t) {
         return option<T>{forward<T>(t)};
     }
 
-    option<void> Some() noexcept {
+    inline constexpr option<void> Some() noexcept {
         return option<void>{detail::valid_void_option_type{}};
     }
 
