@@ -93,7 +93,7 @@ accesses are thrown as exceptions instead of panicing and calling abort
 Questions you were going to ask
 -------------------------------
 
-###  Why yet another either / optional type?
+####  Why yet another either / optional type?
 
 Mostly because I am suffering from bad case of NIH syndrome
 
@@ -113,17 +113,17 @@ specifically delete the assignment operations for those.  If you want to do rebi
 or assign-throughs, you have to be explicit about them.
 
 
-###  Why should I use this instead of [tartanllama/expected] or [tartanllama/optional]?
+####  Why should I use this instead of [tartanllama/expected] or [tartanllama/optional]?
 
 If you want a mature, well-tested, high-quality implementation you probably shouldn't.
 
 
-###  Why is this not called `roc::optional` and `roc::expected`
+####  Why is this not called `roc::optional` and `roc::expected`
 
 Because I do not follow the standard implementations.
 
 
-###  Are these audited for security and correctness?
+####  Are these audited for security and correctness?
 
 *muffled laughter* No.  It would be cool to have that done though.
 
