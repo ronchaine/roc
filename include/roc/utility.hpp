@@ -10,6 +10,13 @@
 # define THROW_OR_PANIC(x) std::abort()
 #endif
 
+namespace roc::tags
+{
+    struct prevent_init {};
+    struct in_place {};
+    struct unexpected {};
+}
+
 namespace roc
 {
     // move and forward, since utility isn't guaranteed in freestanding
@@ -28,6 +35,21 @@ namespace roc
     template<class T> struct dependent_false : std::false_type {};
 
     struct none_type {};
+    struct valid_void_type {};
+    struct empty {};
+}
+
+namespace roc::detail
+{
+    // just for clarity in specialisations
+    constexpr static bool IS_REFERENCE = true;
+    constexpr static bool NOT_REFERENCE = false;
+
+    constexpr static bool TRIVIALLY_DESTRUCTIBLE_VALUE = true;
+    constexpr static bool NOT_TRIVIALLY_DESTRUCTIBLE_VALUE = false;
+
+    constexpr static bool TRIVIALLY_DESTRUCTIBLE_ERROR = true;
+    constexpr static bool NOT_TRIVIALLY_DESTRUCTIBLE_ERROR = false;
 }
 
 #endif

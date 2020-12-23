@@ -20,25 +20,17 @@ namespace roc {
 
 #include "utility.hpp"
 
-namespace roc::tags
-{
-    struct prevent_init {};
-    struct in_place {};
-}
-
 namespace roc
 {
     namespace detail
     {
-        struct valid_void_option_type {};
-
         template <typename T,
                   bool IsTriviallyDestructible = std::is_trivially_destructible<T>::value,
                   bool IsReference = std::is_reference<T>::value>
         struct option_storage {};
 
         template <typename T>
-        struct option_storage<T, true, false>
+        struct option_storage<T, TRIVIALLY_DESTRUCTIBLE_VALUE, NOT_REFERENCE>
         {
             constexpr option_storage() noexcept(std::is_nothrow_default_constructible<T>::value)
                 : contains_value(false) {}
@@ -60,7 +52,7 @@ namespace roc
         };
 
         template <typename T>
-        struct option_storage<T, false, false>
+        struct option_storage<T, NOT_TRIVIALLY_DESTRUCTIBLE_VALUE, NOT_REFERENCE>
         {
             constexpr option_storage() noexcept : contains_value(false) {}
 
@@ -84,7 +76,7 @@ namespace roc
         };
 
         template <>
-        struct option_storage<void, false, false>
+        struct option_storage<void, NOT_TRIVIALLY_DESTRUCTIBLE_VALUE, NOT_REFERENCE>
         {
             constexpr option_storage() noexcept : contains_value(true) {};
             constexpr option_storage(tags::prevent_init) noexcept : contains_value(false) {};
@@ -93,8 +85,8 @@ namespace roc
             bool contains_value;
         };
 
-        template <typename T, bool Dummy>
-        struct option_storage<T, Dummy, true>
+        template <typename T, bool DONT_CARE>
+        struct option_storage<T, DONT_CARE, IS_REFERENCE>
         {
             const std::decay_t<T>* stored_pointer = nullptr;
         };
@@ -167,7 +159,7 @@ namespace roc
             template <typename... Args> constexpr void construct() noexcept { this->contains_value = true; }
             template <typename Rhs> constexpr void construct_with(Rhs&&) noexcept { this->contains_value = true; }
 
-            constexpr void assign(valid_void_option_type) noexcept {
+            constexpr void assign(valid_void_type) noexcept {
                 this->contains_value = true;
             }
 
@@ -290,7 +282,7 @@ namespace roc
     {
         constexpr option() = default;
         constexpr option(none_type) noexcept { this->contains_value = false; }
-        constexpr option(detail::valid_void_option_type) noexcept { this->contains_value = true; }
+        constexpr option(valid_void_type) noexcept { this->contains_value = true; }
 
         constexpr bool is_some() const noexcept { return this->contains_value; }
         constexpr bool is_none() const noexcept { return !this->contains_value; }
@@ -320,7 +312,7 @@ namespace roc::import
     }
 
     inline constexpr option<void> Some() noexcept {
-        return option<void>{detail::valid_void_option_type{}};
+        return option<void>{valid_void_type{}};
     }
 
     constexpr static none_type None {};
