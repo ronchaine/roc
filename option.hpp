@@ -83,7 +83,7 @@ namespace roc
         template <typename T, bool Dummy>
         struct option_storage<T, Dummy, true>
         {
-            std::decay_t<T>* stored_pointer = nullptr;
+            const std::decay_t<T>* stored_pointer = nullptr;
         };
 
 
@@ -225,10 +225,6 @@ namespace roc
 
         template <typename... Args>
         explicit constexpr option(Args&&... args) noexcept { this->construct(forward<Args...>(args...)); }
-
-        // Do NOT allow assigning into these directly
-        option& operator=(const option&) = delete;
-        option& operator=(option&&) = delete;
 
         constexpr bool is_some() const noexcept { return this->has_value(); } 
         constexpr bool is_none() const noexcept { return !this->has_value(); }
