@@ -35,11 +35,16 @@ Then write code like
 
 #include <roc/option.hpp>
 
-// You want to either do using these, alias them or
+// You want to either do using for these, alias them or
 // just pull the entire roc::import namespace, it's
 // meant for that
+
+// This is clearer
 using roc::import::Some;
 using roc::import::None;
+
+// but just would do
+// using namespace roc::import
 
 roc::option<int> test_function(int in) {
     if (in >= 0)
@@ -84,3 +89,45 @@ for the types, so they can be used with `std::cout` or similar tools.
 
 Defining `ROC_ENABLE_EXCEPTIONS` will enable exception handling, and invalid
 accesses are thrown as exceptions instead of panicing and calling abort
+
+Questions you were going to ask
+-------------------------------
+
+###  Why yet another either / optional type?
+
+Mostly because I am suffering from bad case of NIH syndrome
+
+Also, I want reference support for my optionals and expecteds, and I find both
+assign-through and rebind semantics for those *extremely* bad.
+
+Assign-through is one that makes sense in context of references, but it is not
+consistent with itself.  (The assignment needs to do different things depending
+on the state of the optional)
+
+Rebind semantics do the same thing every time, but they have the problem that
+they allow implicit rebinding, basically making the reference a pointer instead
+in my eyes.
+
+We handle that by allowing *initialisation* of reference optional/expected but
+specifically delete the assignment operations for those.  If you want to do rebinds
+or assign-throughs, you have to be explicit about them.
+
+
+###  Why should I use this instead of [tartanllama/expected] or [tartanllama/optional]?
+
+If you want a mature, well-tested, high-quality implementation you probably shouldn't.
+
+
+###  Why is this not called `roc::optional` and `roc::expected`
+
+Because I do not follow the standard implementations.
+
+
+###  Are these audited for security and correctness?
+
+*muffled laughter* No.  It would be cool to have that done though.
+
+
+###  Do you actually expect somebody to ask any questions about this?
+
+Not really, but I was bored so I wrote this.
