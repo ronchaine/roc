@@ -3,7 +3,7 @@
 
 #include <array>
 
-#include "../option.hpp"
+#include <roc/option.hpp>
 
 TEST_CASE("option constructible from Some(T) / None") {
     using roc::import::Some;

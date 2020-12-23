@@ -1,7 +1,7 @@
 #include <iostream>
 #include "doctest.h"
 
-#include "../option.hpp"
+#include <roc/option.hpp>
 
 TEST_CASE("Triviality") {
     REQUIRE(std::is_trivially_copy_constructible<roc::option<int>>::value);

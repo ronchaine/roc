@@ -7,6 +7,16 @@
 #if defined (ROC_ENABLE_STD_STREAMS)
 #include <ostream>
 #endif
+#if defined (ROC_ENABLE_EXCEPTIONS)
+#include <exception>
+namespace roc {
+    struct bad_option_access : public std::exception
+    {
+        bad_option_access() = default;
+        const char *what() const noexcept override { return "Optional has no value"; }
+    };
+}
+#endif
 
 #include "utility.hpp"
 
@@ -123,7 +133,7 @@ namespace roc
                 if constexpr (std::is_reference<T>::value)
                     return *(this->stored_pointer);
                 else
-                    this->stored_value;
+                    return this->stored_value;
             }
 
             constexpr const T& get() const & {
@@ -185,17 +195,17 @@ namespace roc
         constexpr bool contains(U&& compare) const noexcept { return is_some() && this->stored_value == compare; }
 
         constexpr const T& unwrap() const & {
-            if (is_none()) THROW_OR_PANIC(); else return this->get();
+            if (is_none()) THROW_OR_PANIC(bad_option_access()); else return this->get();
         }
         constexpr T& unwrap() & {
-            if (is_none()) THROW_OR_PANIC(); else return this->get();
+            if (is_none()) THROW_OR_PANIC(bad_option_access()); else return this->get();
         }
 
         constexpr T&& unwrap() && {
-            if (is_none()) THROW_OR_PANIC(); else return this->get();
+            if (is_none()) THROW_OR_PANIC(bad_option_access()); else return move(this->get());
         }
         constexpr const T&& unwrap() const&& {
-            if (is_none()) THROW_OR_PANIC(); else return this->get();
+            if (is_none()) THROW_OR_PANIC(bad_option_access()); else return move(this->get());
         }
 
         template <typename U> requires (std::is_copy_constructible<T>::value && std::is_convertible<U&&, T>::value)
@@ -243,17 +253,17 @@ namespace roc
         option& rebind(T&& t) & { this->construct(t); return *this; }
 
         constexpr const T& unwrap() const & {
-            if (is_none()) THROW_OR_PANIC(); else return this->get();
+            if (is_none()) THROW_OR_PANIC(bad_option_access()); else return this->get();
         }
         constexpr T& unwrap() & {
-            if (is_none()) THROW_OR_PANIC(); else return this->get();
+            if (is_none()) THROW_OR_PANIC(bad_option_access()); else return this->get();
         }
 
         constexpr T&& unwrap() && {
-            if (is_none()) THROW_OR_PANIC(); else return this->get();
+            if (is_none()) THROW_OR_PANIC(bad_option_access()); else return move(this->get());
         }
         constexpr const T&& unwrap() const&& {
-            if (is_none()) THROW_OR_PANIC(); else return this->get();
+            if (is_none()) THROW_OR_PANIC(bad_option_access()); else return move(this->get());
         }
 
         template <typename U> requires (std::is_copy_constructible<T>::value && std::is_convertible<U&&, T>::value)
