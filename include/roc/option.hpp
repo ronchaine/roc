@@ -159,14 +159,6 @@ namespace roc
             template <typename... Args> constexpr void construct() noexcept { this->contains_value = true; }
             template <typename Rhs> constexpr void construct_with(Rhs&&) noexcept { this->contains_value = true; }
 
-            constexpr void assign(valid_void_type) noexcept {
-                this->contains_value = true;
-            }
-
-            constexpr void assign(none_type) noexcept {
-                this->contains_value = false;
-            }
-
             constexpr bool has_value() const { return this->contains_value; }
         };
     }
