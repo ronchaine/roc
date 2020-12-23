@@ -184,17 +184,34 @@ namespace roc
             constexpr bool has_value() const requires (std::is_reference<T>::value)
                 { return this->stored_pointer != nullptr; }
 
-            constexpr T& get() & { return std::is_reference_v<T> ? *(this->stored_pointer) : this->stored_value; }
+            constexpr T& get() & { 
+                if constexpr (std::is_reference<T>::value)
+                    return *(this->stored_pointer);
+                else
+                    this->stored_value;
+            }
 
             constexpr const T& get() const & {
                 if constexpr (std::is_reference<T>::value)
-                    return *(this->stored_pointer);
+                    return const_cast<const T&>(*(this->stored_pointer));
                 else
                     return this->stored_value;
             }
 
-            constexpr T&& get() && { return std::is_reference_v<T> ? *(this->stored_pointer) : this->stored_value; }
-            constexpr const T&& get() const && { return std::is_reference_v<T> ? *(this->stored_pointer) : this->stored_value; }
+            constexpr T&& get() && { 
+                if constexpr (std::is_reference<T>::value)
+                    return move(*(this->stored_pointer));
+                else
+                    return move(this->stored_value);
+            }
+
+            constexpr const T&& get() const && {
+                // this doesn't make any sense?
+                if constexpr (std::is_reference<T>::value)
+                    return const_cast<const T&&>(move(*(this->stored_pointer)));
+                else
+                    return move(this->stored_value);
+            }
 
             constexpr void destroy_value() { get().~T(); }
         };
@@ -217,7 +234,7 @@ namespace roc
         };
     }
 
-    template <typename T>
+    template <typename T, bool IsReference = std::is_reference_v<T>>
     struct option : detail::option_opers<T>
     {
         constexpr option() = default;
@@ -225,6 +242,57 @@ namespace roc
 
         template <typename... Args>
         explicit constexpr option(Args&&... args) noexcept { this->construct(forward<Args...>(args...)); }
+
+        constexpr bool is_some() const noexcept { return this->has_value(); } 
+        constexpr bool is_none() const noexcept { return !this->has_value(); }
+
+        template <typename U>
+        constexpr bool contains(U&& compare) const noexcept { return is_some() && this->stored_value == compare; }
+
+        constexpr const T& unwrap() const & {
+            if (is_none()) THROW_OR_PANIC(); else return this->get();
+        }
+        constexpr T& unwrap() & {
+            if (is_none()) THROW_OR_PANIC(); else return this->get();
+        }
+
+        constexpr T&& unwrap() && {
+            if (is_none()) THROW_OR_PANIC(); else return this->get();
+        }
+        constexpr const T&& unwrap() const&& {
+            if (is_none()) THROW_OR_PANIC(); else return this->get();
+        }
+
+        template <typename U> requires (std::is_copy_constructible<T>::value && std::is_convertible<U&&, T>::value)
+        constexpr const T& unwrap_or(U&& v) const & {
+            return is_some()? unwrap() : static_cast<T>(forward<U>(v));
+        }
+        template <typename U> requires (std::is_copy_constructible<T>::value && std::is_convertible<U&&, T>::value)
+        constexpr T& unwrap_or(U&& v) & {
+            return is_some()? unwrap() : static_cast<T>(forward<U>(v));
+        }
+
+        template <typename U> requires (std::is_copy_constructible<T>::value && std::is_convertible<U&&, T>::value)
+        constexpr const T&& unwrap_or(U&& v) const && {
+            return is_some()? move(unwrap()) : static_cast<T>(forward<U>(v));
+        }
+        template <typename U> requires (std::is_copy_constructible<T>::value && std::is_convertible<U&&, T>::value)
+        constexpr T&& unwrap_or(U&& v) && {
+            return is_some()? move(unwrap()) : static_cast<T>(forward<U>(v));
+        }
+    };
+
+    template <typename T>
+    struct option<T, true> : detail::option_opers<T>
+    {
+        constexpr option() = default;
+        constexpr option(none_type) noexcept { this->contains_value = false; }
+
+        template <typename... Args>
+        explicit constexpr option(Args&&... args) noexcept { this->construct(forward<Args...>(args...)); }
+
+        constexpr option& operator=(const option&) = delete;
+        constexpr option&& operator=(option&&) = delete;
 
         constexpr bool is_some() const noexcept { return this->has_value(); } 
         constexpr bool is_none() const noexcept { return !this->has_value(); }

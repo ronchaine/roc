@@ -4,6 +4,10 @@
 #include "../option.hpp"
 
 TEST_CASE("Triviality") {
+    REQUIRE(std::is_trivially_copy_constructible<roc::option<int>>::value);
+    REQUIRE(std::is_trivially_copy_assignable<roc::option<int>>::value);
+    REQUIRE(std::is_trivially_move_constructible<roc::option<int>>::value);
+    REQUIRE(std::is_trivially_move_assignable<roc::option<int>>::value);
     REQUIRE(std::is_trivially_destructible<roc::option<int>>::value);
 
     {
@@ -14,6 +18,10 @@ TEST_CASE("Triviality") {
             T& operator=(T&&) = default;
             ~T() = default;
         };
+        REQUIRE(std::is_trivially_copy_constructible<roc::option<T>>::value);
+        REQUIRE(std::is_trivially_copy_assignable<roc::option<T>>::value);
+        REQUIRE(std::is_trivially_move_constructible<roc::option<T>>::value);
+        REQUIRE(std::is_trivially_move_assignable<roc::option<T>>::value);
         REQUIRE(std::is_trivially_destructible<roc::option<T>>::value);
     }
 
@@ -25,6 +33,10 @@ TEST_CASE("Triviality") {
             T& operator=(T&&) { return *this; }
             ~T() {};
         };
+        REQUIRE(not std::is_trivially_copy_constructible<roc::option<T>>::value);
+        REQUIRE(not std::is_trivially_copy_assignable<roc::option<T>>::value);
+        REQUIRE(not std::is_trivially_move_constructible<roc::option<T>>::value);
+        REQUIRE(not std::is_trivially_move_assignable<roc::option<T>>::value);
         REQUIRE(not std::is_trivially_destructible<roc::option<T>>::value);
     }
 
@@ -37,6 +49,10 @@ TEST_CASE("Triviality") {
             ~T() = default;
         };
 
+        REQUIRE(not std::is_trivially_copy_constructible<roc::option<T&>>::value);
+        REQUIRE(not std::is_trivially_copy_assignable<roc::option<T&>>::value);
+        REQUIRE(not std::is_trivially_move_constructible<roc::option<T&>>::value);
+        REQUIRE(not std::is_trivially_move_assignable<roc::option<T&>>::value);
         REQUIRE(std::is_trivially_destructible<roc::option<T&>>::value);
     }
     {
@@ -48,6 +64,10 @@ TEST_CASE("Triviality") {
             ~T() {};
         };
 
+        REQUIRE(not std::is_trivially_copy_constructible<roc::option<T&>>::value);
+        REQUIRE(not std::is_trivially_copy_assignable<roc::option<T&>>::value);
+        REQUIRE(not std::is_trivially_move_constructible<roc::option<T&>>::value);
+        REQUIRE(not std::is_trivially_move_assignable<roc::option<T&>>::value);
         REQUIRE(std::is_trivially_destructible<roc::option<T&>>::value);
     }
 }
