@@ -293,8 +293,10 @@ namespace roc
         template <typename... Args>
         explicit constexpr option(Args&&... args) noexcept { this->construct(forward<Args...>(args...)); }
 
-        constexpr option& operator=(const option&) = delete;
-        constexpr option&& operator=(option&&) = delete;
+        // The comments here are obvious, but the point is to show the comment line
+        // with the error message when trying to do this in user program
+        constexpr option& operator=(const option&) = delete; // do not allow rebinding a reference
+        constexpr option&& operator=(option&&) = delete; // do not allow rebinding a reference
 
         constexpr bool is_some() const noexcept { return this->has_value(); } 
         constexpr bool is_none() const noexcept { return !this->has_value(); }
