@@ -304,6 +304,9 @@ namespace roc
         template <typename U>
         constexpr bool contains(U&& compare) const noexcept { return is_some() && this->stored_value == compare; }
 
+        option& rebind(T&& t) && { this->construct(t); return *this; }
+        option& rebind(T&& t) & { this->construct(t); return *this; }
+
         constexpr const T& unwrap() const & {
             if (is_none()) THROW_OR_PANIC(); else return this->get();
         }
