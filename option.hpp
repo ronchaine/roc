@@ -287,6 +287,8 @@ namespace roc
     {
         constexpr option() = default;
         constexpr option(none_type) noexcept { this->contains_value = false; }
+        constexpr option(const option&) = default;
+        constexpr option(option&&) = default;
 
         template <typename... Args>
         explicit constexpr option(Args&&... args) noexcept { this->construct(forward<Args...>(args...)); }
