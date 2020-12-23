@@ -3,7 +3,10 @@
 
 #include <type_traits>
 #include <initializer_list>
+
+#if defined (ROC_ENABLE_STD_STREAMS)
 #include <ostream>
+#endif
 
 #include "utility.hpp"
 
@@ -283,6 +286,7 @@ namespace roc
         constexpr bool is_none() const noexcept { return !this->contains_value; }
     };
     
+    #if defined (ROC_ENABLE_STD_STREAMS)
     template <typename T>
     std::ostream& operator<<(std::ostream& stream, const option<T>& opt) {
         if (opt.is_some()) {
@@ -295,6 +299,7 @@ namespace roc
         }
         return stream;
     }
+    #endif
 }
 
 namespace roc::import
