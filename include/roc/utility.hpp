@@ -36,7 +36,7 @@ namespace roc
 
     struct none_type {};
     struct valid_void_type {};
-    struct empty {};
+    struct empty_type {};
 }
 
 namespace roc::detail
