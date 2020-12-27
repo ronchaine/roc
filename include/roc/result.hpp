@@ -110,8 +110,14 @@ namespace roc
         struct result_storage<T, E, NOT_REFERENCE, TRIVIALLY_DESTRUCTIBLE_VALUE, TRIVIALLY_DESTRUCTIBLE_ERROR>
         {
             constexpr result_storage() noexcept : uninitialised(), contains_value(false) {}
-            constexpr result_storage(const T& value) : stored_value(value), contains_value(true) {}
-            constexpr result_storage(T&& value) : stored_value(move(value)), contains_value(true) {}
+            constexpr result_storage(const T& value) requires (std::is_trivially_copy_constructible<T>::value)
+                : stored_value(value), contains_value(true) {}
+            constexpr result_storage(T&& value) requires (std::is_trivially_move_constructible<T>::value)
+                : stored_value(move(value)), contains_value(true) {}
+            constexpr result_storage(const error_type<E>& error) requires (std::is_trivially_copy_constructible<error_type<E>>::value)
+                : stored_error(error), contains_value(false) {}
+            constexpr result_storage(error_type<E>&& error) requires (std::is_trivially_move_constructible<error_type<E>>::value)
+                : stored_error(move(error)), contains_value(false) {}
 
             constexpr result_storage(const result_storage&) noexcept = default;
             constexpr result_storage(result_storage&&) noexcept = default;
@@ -134,8 +140,14 @@ namespace roc
         struct result_storage<T, E, NOT_REFERENCE, TriviallyDestructibleT, TriviallyDestructibleE>
         {
             constexpr result_storage() noexcept : uninitialised(), contains_value(false) {}
-            constexpr result_storage(const T& value) : stored_value(value), contains_value(true) {}
-            constexpr result_storage(T&& value) : stored_value(move(value)), contains_value(true) {}
+            constexpr result_storage(const T& value) requires (std::is_trivially_copy_constructible<T>::value)
+                : stored_value(value), contains_value(true) {}
+            constexpr result_storage(T&& value) requires (std::is_trivially_move_constructible<T>::value)
+                : stored_value(move(value)), contains_value(true) {}
+            constexpr result_storage(const error_type<E>& error) requires (std::is_trivially_copy_constructible<error_type<E>>::value)
+                : stored_error(error), contains_value(false) {}
+            constexpr result_storage(error_type<E>&& error) requires (std::is_trivially_move_constructible<error_type<E>>::value)
+                : stored_error(move(error)), contains_value(false) {}
 
             constexpr result_storage(const result_storage&) noexcept = default;
             constexpr result_storage(result_storage&&) noexcept = default;
@@ -165,7 +177,8 @@ namespace roc
             static_assert(not std::is_void_v<T>);
             constexpr result_storage() noexcept : uninitialised(), contains_value(false) {}
             constexpr result_storage(T&& value) : stored_pointer(&value), contains_value(true) {}
-            constexpr result_storage(E&& error) : stored_error(error), contains_value(false) {}
+            constexpr result_storage(const error_type<E>& error) : stored_error(error), contains_value(false) {}
+            constexpr result_storage(error_type<E>&& error) : stored_error(move(error)), contains_value(false) {}
 
             constexpr result_storage(const result_storage&) = default;
             constexpr result_storage(result_storage&&) = default;
@@ -201,18 +214,18 @@ namespace roc
 
             constexpr result_storage_adds() noexcept = default;
             constexpr result_storage_adds(const result_storage_adds&) noexcept = default;
+
             constexpr result_storage_adds(const T& v) noexcept : result_storage<T, E>(v) {}
+            constexpr result_storage_adds(T&& v) noexcept requires (not std::is_reference<T>::value)
+                : result_storage<T, E>(move(v)){}
+
+            constexpr result_storage_adds(const error_type<E>& error) : result_storage<T, E>(error) {}
+            constexpr result_storage_adds(error_type<E>&& error) : result_storage<T, E>(error) {}
 
             template <typename... Args> constexpr void construct(Args&&... args) noexcept
                 requires (not std::is_reference<T>::value)
             {
                 new(&(this->stored_value)) T(forward<Args>(args)...);
-                this->contains_value = true;
-            }
-            template <typename V> constexpr void construct(V& value_target) noexcept
-                requires (std::is_reference<T>::value)
-            {
-                this->stored_pointer = &value_target;
                 this->contains_value = true;
             }
             template <typename Moved> constexpr void construct_with(Moved&& rhs) noexcept
