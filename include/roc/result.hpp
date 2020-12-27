@@ -386,6 +386,14 @@ namespace roc
             using value_type = void;
             using unexpected_type = error_type<E>;
 
+            constexpr result() noexcept = default;
+            constexpr result(const result&) noexcept = default;
+            constexpr result(result&&) noexcept = default;
+            constexpr result& operator=(const result&) noexcept = default;
+            constexpr result& operator=(result&&) noexcept = default;
+
+            constexpr result(success_type<void>&&) noexcept { this->contains_value = true; }
+
             constexpr bool is_ok() const noexcept { return this->has_value(); }
             constexpr bool is_err() const noexcept { return !this->has_value(); }
     };
@@ -401,6 +409,10 @@ namespace roc::import
         } else {
             return success_type<T, false>{forward<T>(t)};
         }
+    }
+    inline constexpr success_type<void> Ok()
+    {
+        return success_type<void>{};
     }
     template <typename E> inline constexpr error_type<E> Err(E&& e)
         noexcept(std::is_nothrow_constructible<error_type<E>, decltype(e)>::value) {

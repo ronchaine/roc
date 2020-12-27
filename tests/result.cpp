@@ -254,6 +254,12 @@ TEST_CASE("roc::result - constructing / checking values") {
         REQUIRE(ref71.contains(71));
         REQUIRE(ref71.unwrap() == 71);
     }
+    SUBCASE("initialise and verify (void)") {
+        roc::result<void, int> void_test { Ok() };
+
+        REQUIRE(void_test.is_ok());
+        REQUIRE(not void_test.is_err());
+    }
 }
 
 TEST_CASE("roc::result - constructing / checking errors") {
