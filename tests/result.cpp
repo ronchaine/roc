@@ -169,6 +169,34 @@ TEST_CASE("roc::result - triviality") {
         REQUIRE(not std::is_trivially_move_assignable<roc::result<nontrivial_type, nontrivial_type>>::value);
         REQUIRE(not std::is_trivially_destructible<roc::result<nontrivial_type, nontrivial_type>>::value);
     }
+
+    SUBCASE("type with trivial result value member is trivially copyable/movable/destructible") {
+        struct T {
+            roc::result<int, int> builtins;
+            roc::result<trivial_type, int> trivial_value;
+            roc::result<int, trivial_type> trivial_error;
+            roc::result<trivial_type, trivial_type> both_trivial;
+        };
+
+        REQUIRE(std::is_trivially_copy_constructible<T>::value);
+        REQUIRE(std::is_trivially_copy_assignable<T>::value);
+        REQUIRE(std::is_trivially_move_constructible<T>::value);
+        REQUIRE(std::is_trivially_move_assignable<T>::value);
+        REQUIRE(std::is_trivially_destructible<T>::value);
+    }
+
+    SUBCASE("type with result<T&> value member is still trivial sans assignments") {
+        struct T {
+            roc::result<int&, int> builtins;
+            roc::result<trivial_type&, int> trivial_value;
+        };
+
+        REQUIRE(std::is_trivially_copy_constructible<T>::value);
+        REQUIRE(std::is_trivially_move_constructible<T>::value);
+        REQUIRE(not std::is_trivially_copy_assignable<T>::value);
+        REQUIRE(not std::is_trivially_move_assignable<T>::value);
+        REQUIRE(std::is_trivially_destructible<T>::value);
+    }
 }
 
 TEST_CASE ("roc::result - construction & assignment traits") {
@@ -228,3 +256,7 @@ TEST_CASE("roc::result - constructing / checking values") {
     }
 }
 
+TEST_CASE("roc::result - constructing / checking errors") {
+    SUBCASE("") {
+    }
+}
