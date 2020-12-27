@@ -182,8 +182,6 @@ namespace roc
 
             constexpr result_storage(const result_storage&) = default;
             constexpr result_storage(result_storage&&) = default;
-            constexpr result_storage& operator=(const result_storage&) = delete;
-            constexpr result_storage& operator=(const result_storage&&) = delete;
 
             ~result_storage() = default;
 
@@ -355,8 +353,8 @@ namespace roc
             constexpr bool is_ok() const noexcept { return this->has_value(); }
             constexpr bool is_err() const noexcept { return !this->has_value(); }
 
-            constexpr bool contains(T&& t) const noexcept { return is_ok()? t == unwrap() : false; }
-            constexpr bool contains_err(E&& e) const noexcept;
+            constexpr bool contains(const std::decay_t<T>& t) const noexcept { return is_ok()? t == unwrap() : false; }
+            constexpr bool contains_err(const E&& e) const noexcept;
 
             constexpr const T& unwrap() const & {
                 if (is_err()) THROW_OR_PANIC(bad_result_access()); else return this->get();

@@ -223,6 +223,7 @@ TEST_CASE("roc::result - constructing / checking values") {
         REQUIRE(ref71.is_ok());
         REQUIRE(not ref71.is_err());
 
+        REQUIRE(ref71.contains(71));
         REQUIRE(ref71.unwrap() == 71);
     }
 }
