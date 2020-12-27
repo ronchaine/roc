@@ -195,13 +195,13 @@ namespace roc
         };
 
         template <typename T, typename E>
-        struct result_opers : result_storage<T, E>
+        struct result_storage_adds : result_storage<T, E>
         {
             using result_storage<T, E>::result_storage;
 
-            constexpr result_opers() noexcept = default;
-            constexpr result_opers(const result_opers&) noexcept = default;
-            constexpr result_opers(const T& v) noexcept : result_storage<T, E>(v) {}
+            constexpr result_storage_adds() noexcept = default;
+            constexpr result_storage_adds(const result_storage_adds&) noexcept = default;
+            constexpr result_storage_adds(const T& v) noexcept : result_storage<T, E>(v) {}
 
             template <typename... Args> constexpr void construct(Args&&... args) noexcept
                 requires (not std::is_reference<T>::value)
@@ -276,7 +276,7 @@ namespace roc
         };
 
         template <typename E>
-        struct result_opers<void, E> : result_storage<void, E>
+        struct result_storage_adds<void, E> : result_storage<void, E>
         {
             using result_storage<void, E>::result_storage;
 
@@ -304,7 +304,7 @@ namespace roc
     }
 
     template <typename T, typename E>
-    struct result : detail::result_opers<T, E>
+    struct result : detail::result_storage_adds<T, E>
     {
         static_assert(not std::is_reference<E>::value, "error type cannot be a reference");
         public:
@@ -329,7 +329,7 @@ namespace roc
             }
 
             template <typename U> requires (std::is_reference<T>::value)
-            constexpr result(success_type<U>&& v) noexcept : detail::result_opers<T, E>(v.value()) {}
+            constexpr result(success_type<U>&& v) noexcept : detail::result_storage_adds<T, E>(v.value()) {}
 
             template <typename U> requires (std::is_convertible<U&&, E>::value)
             constexpr result(error_type<U>&& v) noexcept(std::is_nothrow_convertible<U&&, E>::value) {
@@ -369,7 +369,7 @@ namespace roc
     };
 
     template <typename E>
-    struct result<void, E> : detail::result_opers<void, E>
+    struct result<void, E> : detail::result_storage_adds<void, E>
     {
         public:
             using value_type = void;
