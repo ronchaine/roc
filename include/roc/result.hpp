@@ -6,6 +6,9 @@
 #include <initializer_list>
 #include <compare>
 
+#if defined (ROC_ENABLE_STD_STREAMS)
+#include <ostream>
+#endif
 #if defined (ROC_ENABLE_EXCEPTIONS)
 # include <exception>
 namespace roc {
@@ -398,6 +401,19 @@ namespace roc
                 if (is_err()) THROW_OR_PANIC(bad_result_access()); else return move(this->get());
             }
 
+            constexpr const E& err_value() const & {
+                if (is_ok()) THROW_OR_PANIC(bad_result_access()); else return this->geterr();
+            }
+            constexpr E& err_value() & {
+                if (is_ok()) THROW_OR_PANIC(bad_result_access()); else return this->geterr();
+            }
+            constexpr const E&& err_value() const && {
+                if (is_ok()) THROW_OR_PANIC(bad_result_access()); else return this->geterr();
+            }
+            constexpr E&& err_value() && {
+                if (is_ok()) THROW_OR_PANIC(bad_result_access()); else return this->geterr();
+            }
+
             template <typename U> requires (std::is_copy_constructible<T>::value && std::is_convertible<U&&, T>::value)
             constexpr T unwrap_or(U&& v) const& noexcept(std::is_nothrow_convertible<U&&, T>::value) {
                 return is_ok()? unwrap() : static_cast<T>(forward<U>(v));
@@ -432,7 +448,35 @@ namespace roc
             constexpr bool is_err() const noexcept { return !this->has_value(); }
 
             constexpr bool contains_err(const E&& e) const noexcept { return is_err()? e == static_cast<E>(this->geterr()) : false; }
+
+            constexpr const E& err_value() const & {
+                if (is_ok()) THROW_OR_PANIC(bad_result_access()); else return this->geterr();
+            }
+            constexpr E& err_value() & {
+                if (is_ok()) THROW_OR_PANIC(bad_result_access()); else return this->geterr();
+            }
+            constexpr const E&& err_value() const && {
+                if (is_ok()) THROW_OR_PANIC(bad_result_access()); else return this->geterr();
+            }
+            constexpr E&& err_value() && {
+                if (is_ok()) THROW_OR_PANIC(bad_result_access()); else return this->geterr();
+            }
     };
+
+    #if defined (ROC_ENABLE_STD_STREAMS)
+    template <typename T, typename E>
+    std::ostream& operator<<(std::ostream& stream, const result<T, E>& res) {
+        if (res.is_ok()) {
+            if constexpr (std::is_void<T>::value)
+                stream << "Ok()";
+            else
+                stream << "Ok(" << opt.unwrap() << ")";
+        } else {
+            stream << "Err(" << res.err_value() << ")";
+        }
+        return stream;
+    }
+    #endif
 }
 
 namespace roc::import
