@@ -230,6 +230,18 @@ TEST_CASE ("roc::result - construction & assignment traits") {
 }
 
 TEST_CASE("roc::result - constructing / checking values") {
+    SUBCASE("default construct") {
+        roc::result<int, int> value;
+        roc::result<int&, int> reference;
+        roc::result<void, int> void_;
+
+        REQUIRE(not value.is_ok());
+        REQUIRE(value.is_err());
+        REQUIRE(not reference.is_ok());
+        REQUIRE(reference.is_err());
+        REQUIRE(not void_.is_ok());
+        REQUIRE(void_.is_err());
+    }
     SUBCASE("initialise and verify (value)") {
         roc::result<int, int> int0 { Ok(0) };
         roc::result<int, int> int42 = Ok(42);
@@ -262,7 +274,39 @@ TEST_CASE("roc::result - constructing / checking values") {
     }
 }
 
-TEST_CASE("roc::result - constructing / checking errors") {
-    SUBCASE("") {
+TEST_CASE("roc::result - assigning / checking values") {
+    SUBCASE("assign and verify (value)") {
+        roc::result<int, int> test_case;
+        REQUIRE(not test_case.is_ok());
+
+        test_case = Ok(22);
+        REQUIRE(test_case.is_ok());
+        REQUIRE(test_case.contains(22));
+        REQUIRE(test_case.unwrap() == 22);
+
+        test_case = Err(42);
+        REQUIRE(test_case.is_err());
+        REQUIRE(test_case.contains_err(42));
+    }
+
+    SUBCASE("assign and verify (reference)") {
+        roc::result<int&, int> test_case;
+        REQUIRE(not test_case.is_ok());
+
+        test_case = Err(42);
+        REQUIRE(test_case.is_err());
+        REQUIRE(test_case.contains_err(42));
+    }
+
+    SUBCASE("assign and verify (void)") {
+        roc::result<void, int> test_case;
+        REQUIRE(not test_case.is_ok());
+
+        test_case = Err(42);
+        REQUIRE(test_case.is_err());
+        REQUIRE(test_case.contains_err(42));
+
+        test_case = Ok();
+        REQUIRE(test_case.is_ok());
     }
 }

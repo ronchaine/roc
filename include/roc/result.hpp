@@ -75,6 +75,8 @@ namespace roc
     class error_type
     {
         public:
+            using type = E;
+
             explicit constexpr error_type(const E& err) noexcept(std::is_nothrow_copy_constructible<E>::value) 
                 : unexpected_value(err) {}
             explicit constexpr error_type(E&& err) noexcept(std::is_nothrow_move_constructible<E>::value)
@@ -194,14 +196,41 @@ namespace roc
         };
 
         template <typename E>
-        struct result_storage<void, E, NOT_REFERENCE, false, true>
+        struct result_storage<void, E, NOT_REFERENCE, false, TRIVIALLY_DESTRUCTIBLE_ERROR>
         {
+            struct dummy {};
+
+            constexpr result_storage() noexcept : dummy_value(), contains_value(false) {}
+            constexpr result_storage(success_type<void>&&) : dummy_value(), contains_value(true) {}
+            constexpr result_storage(const error_type<E>& error) : stored_error(error), contains_value(false) {}
+            constexpr result_storage(error_type<E>&& error) : stored_error(move(error)), contains_value(false) {}
+
+            union {
+                dummy           dummy_value;
+                error_type<E>   stored_error;
+            };
             bool contains_value = false;
         };
 
         template <typename E>
-        struct result_storage<void, E, NOT_REFERENCE, false, false>
+        struct result_storage<void, E, NOT_REFERENCE, false, NOT_TRIVIALLY_DESTRUCTIBLE_ERROR>
         {
+            struct dummy {};
+
+            constexpr result_storage() noexcept : dummy_value(), contains_value(false) {}
+            constexpr result_storage(success_type<void>&&) : dummy_value(), contains_value(true) {}
+            constexpr result_storage(const error_type<E>& error) : stored_error(error), contains_value(false) {}
+            constexpr result_storage(error_type<E>&& error) : stored_error(move(error)), contains_value(false) {}
+
+            ~result_storage() {
+                if (not contains_value)
+                    stored_error.~error_type<E>();
+            }
+
+            union {
+                dummy           dummy_value;
+                error_type<E>   stored_error;
+            };
             bool contains_value = false;
         };
 
@@ -354,7 +383,7 @@ namespace roc
             constexpr bool is_err() const noexcept { return !this->has_value(); }
 
             constexpr bool contains(const std::decay_t<T>& t) const noexcept { return is_ok()? t == unwrap() : false; }
-            constexpr bool contains_err(const E&& e) const noexcept;
+            constexpr bool contains_err(const E&& e) const noexcept { return is_err()? e == static_cast<E>(this->geterr()) : false; }
 
             constexpr const T& unwrap() const & {
                 if (is_err()) THROW_OR_PANIC(bad_result_access()); else return this->get();
@@ -394,8 +423,15 @@ namespace roc
 
             constexpr result(success_type<void>&&) noexcept { this->contains_value = true; }
 
+            template <typename U> requires (std::is_convertible<U&&, E>::value)
+            constexpr result(error_type<U>&& v) noexcept(std::is_nothrow_convertible<U&&, E>::value) {
+                this->construct_error(static_cast<E>(forward<error_type<U>>(v)));
+            }
+
             constexpr bool is_ok() const noexcept { return this->has_value(); }
             constexpr bool is_err() const noexcept { return !this->has_value(); }
+
+            constexpr bool contains_err(const E&& e) const noexcept { return is_err()? e == static_cast<E>(this->geterr()) : false; }
     };
 }
 
