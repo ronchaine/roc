@@ -13,7 +13,7 @@ TODO:
 -----
 - [ ] Basic implementations
     - [x] option
-    - [ ] result
+    - [x] result
     - [ ] monadic
 - [ ] Tests
     - [ ] option
