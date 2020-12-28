@@ -60,8 +60,7 @@ namespace roc
             using reference_type = plain_type&;
 
             explicit constexpr success_type(const plain_type& val) noexcept : expected_ptr(const_cast<plain_type*>(&val)) {}
-
-            constexpr success_type(const success_type<plain_type, false>& ref) noexcept {}
+            constexpr success_type(const success_type<plain_type, false>& ref) noexcept : expected_ptr(&(ref.value())) {}
 
             constexpr reference_type value() const & noexcept { return *expected_ptr; }
             constexpr reference_type value() const && noexcept { return *expected_ptr; }
