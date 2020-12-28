@@ -64,8 +64,8 @@ TEST_CASE("roc::success_type - triviality") {
     SUBCASE("trivial construct/assign/destruct with reference types") {
         REQUIRE(std::is_trivially_copy_constructible<roc::success_type<int&>>::value);
         REQUIRE(std::is_trivially_move_constructible<roc::success_type<int&>>::value);
-        REQUIRE(std::is_trivially_copy_assignable<roc::success_type<int&>>::value);
-        REQUIRE(std::is_trivially_move_assignable<roc::success_type<int&>>::value);
+        REQUIRE(not std::is_copy_assignable<roc::success_type<int&>>::value);
+        REQUIRE(not std::is_move_assignable<roc::success_type<int&>>::value);
         REQUIRE(std::is_trivially_destructible<roc::success_type<int&>>::value);
     }
 
