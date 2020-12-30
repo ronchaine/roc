@@ -166,6 +166,8 @@ namespace roc
     template <typename T, bool IsReference = std::is_reference_v<T>>
     struct option : detail::option_opers<T>
     {
+        using value_type = T;
+
         constexpr option() = default;
         constexpr option(none_type) noexcept { this->contains_value = false; }
 
@@ -214,6 +216,8 @@ namespace roc
     template <typename T>
     struct option<T, true> : detail::option_opers<T>
     {
+        using value_type = T;
+
         constexpr option() = default;
         constexpr option(none_type) noexcept { this->contains_value = false; }
         constexpr option(const option&) = default;
