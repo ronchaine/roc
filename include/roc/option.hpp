@@ -163,7 +163,7 @@ namespace roc
         };
     }
 
-    template <typename T, bool IsReference = std::is_reference_v<T>>
+    template <typename T, typename = boolopt<std::is_reference_v<T>>>
     struct option : detail::option_opers<T>
     {
         using value_type = T;
@@ -214,7 +214,7 @@ namespace roc
     };
 
     template <typename T>
-    struct option<T, true> : detail::option_opers<T>
+    struct option<T, boolopt<true>> : detail::option_opers<T>
     {
         using value_type = T;
 

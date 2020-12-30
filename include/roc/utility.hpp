@@ -32,7 +32,12 @@ namespace roc
         return static_cast<T&&>(t);
     }
 
-    template<class T> struct dependent_false : std::false_type {};
+    template<typename T, typename...> struct dependent_false : std::false_type {};
+
+    // Used for boolean values in templates, where the template
+    // needs to be picked by template template <typename...>
+    // (and thus cannot use non-type template parameters)
+    template <bool value> struct boolopt {};
 
     struct none_type {};
     struct valid_void_type {};
