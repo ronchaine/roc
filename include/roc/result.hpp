@@ -469,7 +469,7 @@ namespace roc
             if constexpr (std::is_void<T>::value)
                 stream << "Ok()";
             else
-                stream << "Ok(" << opt.unwrap() << ")";
+                stream << "Ok(" << res.unwrap() << ")";
         } else {
             stream << "Err(" << res.err_value() << ")";
         }
