@@ -426,7 +426,27 @@ namespace roc
             template <typename Func>
             constexpr auto and_then(Func&& f) {
                 using result_type = typename std::invoke_result<Func, value_type>::type;
-                return is_err()? result_type{this->geterr()} : f(unwrap());
+                return is_ok()? f(unwrap()) : result_type{this->geterr()};
+            }
+
+            template <typename Func>
+            constexpr auto map(Func&& f) {
+                using result_value_type = typename std::invoke_result<Func, value_type>::type::value_type;
+                return is_ok()? result<result_value_type, E>{f(unwrap())}
+                    : result<result_value_type, E>{this->geterr()};
+            }
+
+            template <typename Func>
+            constexpr auto map_err(Func&& f) {
+                using result_value_type = typename std::invoke_result<Func, value_type>::type::value_type;
+                return is_ok()? result<result_value_type, E>{unwrap()}
+                    : result<result_value_type, E>{f(this->geterr())};
+            }
+
+            template <typename Func>
+            constexpr auto or_else(Func&& f) {
+                return is_ok()? *this
+                    : result<T, E>{f(this->geterr())};
             }
     };
 

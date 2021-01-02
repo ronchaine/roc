@@ -215,7 +215,9 @@ namespace roc
 
         template <typename Func>
         constexpr auto and_then(Func&& f) {
-            return is_some()? f(unwrap()) : none_type{};
+            using result_type = typename std::invoke_result<Func, value_type&>::type;
+            return is_some()? f(unwrap())
+                : result_type{none_type{}};
         }
     };
 
@@ -280,7 +282,28 @@ namespace roc
 
         template <typename Func>
         constexpr auto and_then(Func&& f) {
-            return is_none()? none_type{} : f(unwrap());
+            using result_type = typename std::invoke_result<Func, value_type&>::type;
+            return is_some()? f(unwrap())
+                : result_type{none_type{}};
+        }
+        template <typename Func>
+        constexpr auto map(Func&& f) {
+            using result_value_type = typename std::invoke_result<Func, value_type>::type::value_type;
+            return is_some()? option<result_value_type>{f(unwrap())}
+                : option<result_value_type>{this->geterr()};
+        }
+
+        template <typename Func>
+        constexpr auto map_err(Func&& f) {
+            using result_value_type = typename std::invoke_result<Func, value_type>::type::value_type;
+            return is_some()? option<result_value_type>{unwrap()}
+                : option<result_value_type>{f(this->geterr())};
+        }
+
+        template <typename Func>
+        constexpr auto or_else(Func&& f) {
+            return is_some()? *this
+                : option<T>{f(this->geterr())};
         }
     };
 
