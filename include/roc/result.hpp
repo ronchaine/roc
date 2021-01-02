@@ -422,6 +422,12 @@ namespace roc
             constexpr T unwrap_or(U&& v) && noexcept(std::is_nothrow_convertible<U&&, T>::value) {
                 return is_ok()? move(unwrap()) : static_cast<T>(forward<U>(v));
             }
+
+            template <typename Func>
+            constexpr auto and_then(Func&& f) {
+                using result_type = typename std::invoke_result<Func, value_type>::type;
+                return is_err()? result_type{this->geterr()} : f(unwrap());
+            }
     };
 
     template <typename E>
@@ -460,6 +466,11 @@ namespace roc
             }
             constexpr E&& err_value() && {
                 if (is_ok()) THROW_OR_PANIC(bad_result_access()); else return this->geterr();
+            }
+
+            template <typename Func>
+            constexpr auto and_then(Func&& f) {
+                return is_err()? *this : f(valid_void_type{});
             }
     };
 
@@ -520,13 +531,9 @@ namespace roc
                   typename R = typename std::invoke_result<Func, T>::type>
         constexpr static R bind(const result<T, E>& res, Func&& f)
         {
-            if (res.is_err())
-                return res;
-
-            return f(res.unwrap());
+            return res.and_then(f);
         }
     };
-
 }
 
 #endif

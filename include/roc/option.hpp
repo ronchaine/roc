@@ -212,6 +212,11 @@ namespace roc
         constexpr T&& unwrap_or(U&& v) && {
             return is_some()? move(unwrap()) : static_cast<T>(forward<U>(v));
         }
+
+        template <typename Func>
+        constexpr auto and_then(Func&& f) {
+            return is_some()? f(unwrap()) : none_type{};
+        }
     };
 
     template <typename T>
@@ -272,6 +277,11 @@ namespace roc
         constexpr T&& unwrap_or(U&& v) && {
             return is_some()? move(unwrap()) : static_cast<T>(forward<U>(v));
         }
+
+        template <typename Func>
+        constexpr auto and_then(Func&& f) {
+            return is_none()? none_type{} : f(unwrap());
+        }
     };
 
     template <>
@@ -325,10 +335,7 @@ namespace roc
                   typename R = typename std::invoke_result<Func, T>::type>
         constexpr static R bind(const option<T>& opt, Func&& f)
         {
-            if (opt.is_none())
-                R{import::None};
-
-            return f(opt.unwrap());
+            return opt.and_then(f);
         }
     };
 }
