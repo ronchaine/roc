@@ -2,6 +2,7 @@
 #define ROC_RESULT_HPP
 
 #include "utility.hpp"
+#include "monadic.hpp"
 
 #include <initializer_list>
 #include <compare>
@@ -497,6 +498,35 @@ namespace roc::import
         noexcept(std::is_nothrow_constructible<error_type<E>, decltype(e)>::value) {
         return error_type(forward<E>(e));
     }
+}
+
+namespace roc
+{
+    template <>
+    struct monad_wrap<result>
+    {
+        template <typename T, typename E>
+        constexpr static result<T, E> wrap(T&& value) {
+            return result<T, E>(import::Ok(forward<T>(value)));
+        }
+    };
+
+    template <>
+    struct monad_bind<result>
+    {
+        template <typename T,
+                  typename E,
+                  roc::callable Func,
+                  typename R = typename std::invoke_result<Func, T>::type>
+        constexpr static R bind(const result<T, E>& res, Func&& f)
+        {
+            if (res.is_err())
+                return res;
+
+            return f(res.unwrap());
+        }
+    };
+
 }
 
 #endif

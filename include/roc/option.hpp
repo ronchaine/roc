@@ -19,6 +19,7 @@ namespace roc {
 #endif
 
 #include "utility.hpp"
+#include "monadic.hpp"
 
 namespace roc
 {
@@ -312,6 +313,24 @@ namespace roc::import
     }
 
     constexpr static none_type None {};
+}
+
+namespace roc
+{
+    template <>
+    struct monad_bind<option>
+    {
+        template <typename T,
+                  roc::callable Func,
+                  typename R = typename std::invoke_result<Func, T>::type>
+        constexpr static R bind(const option<T>& opt, Func&& f)
+        {
+            if (opt.is_none())
+                R{import::None};
+
+            return f(opt.unwrap());
+        }
+    };
 }
 
 #endif
