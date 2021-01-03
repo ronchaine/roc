@@ -1,9 +1,6 @@
 #ifndef ROC_RESULT_HPP
 #define ROC_RESULT_HPP
 
-#include "utility.hpp"
-#include "monadic.hpp"
-
 #include <initializer_list>
 #include <compare>
 
@@ -20,6 +17,9 @@ namespace roc {
     };
 }
 #endif
+
+#include "utility.hpp"
+#include "monadic.hpp"
 
 namespace roc
 {
