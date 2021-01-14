@@ -255,7 +255,7 @@ namespace roc
             template <typename... Args> constexpr void construct(Args&&... args) noexcept
                 requires (not std::is_reference<T>::value)
             {
-                new(&(this->stored_value)) T(forward<Args>(args)...);
+                new(&(this->stored_value)) T(::roc::forward<Args>(args)...);
                 this->contains_value = true;
             }
             template <typename Moved> constexpr void construct_with(Moved&& rhs) noexcept
@@ -368,7 +368,8 @@ namespace roc
 
             template <typename U> requires (std::is_convertible<U&&, T>::value && (not std::is_reference<T>::value))
             constexpr result(success_type<U>&& v) noexcept(std::is_nothrow_convertible<U&&, T>::value) {
-                this->construct(static_cast<T>(forward<success_type<U>>(v)));
+//                this->construct(static_cast<T>(::roc::forward<success_type<U>>(v)));
+                this->construct(static_cast<T>(::roc::forward<U>(v.value())));
             }
 
             template <typename U> requires (std::is_reference<T>::value)
@@ -376,7 +377,7 @@ namespace roc
 
             template <typename U> requires (std::is_convertible<U&&, E>::value)
             constexpr result(error_type<U>&& v) noexcept(std::is_nothrow_convertible<U&&, E>::value) {
-                this->construct_error(static_cast<E>(forward<error_type<U>>(v)));
+                this->construct_error(static_cast<E>(::roc::forward<error_type<U>>(v)));
             }
 
             constexpr result& operator=(success_type<T>&& value) noexcept { this->construct(value); return *this; }
@@ -516,9 +517,9 @@ namespace roc::import
         noexcept(std::is_nothrow_constructible<success_type<T>, decltype(t)>::value)
     {
         if constexpr (std::is_reference<T>::value) {
-            return success_type<T, true>{forward<T>(t)};
+            return success_type<T, true>{::roc::forward<T>(t)};
         } else {
-            return success_type<T, false>{forward<T>(t)};
+            return success_type<T, false>{::roc::forward<T>(t)};
         }
     }
     inline constexpr success_type<void> Ok()
