@@ -37,14 +37,14 @@ namespace roc
                 : expected_value(forward<Args>(args)...) {}
 
             explicit constexpr operator T() const & noexcept { return expected_value; }
-            explicit constexpr operator T() const && noexcept { return expected_value; }
+            explicit constexpr operator T() const && noexcept { return ::roc::move(expected_value); }
             explicit constexpr operator T() & noexcept { return expected_value; }
-            explicit constexpr operator T() && noexcept { return expected_value; }
+            explicit constexpr operator T() && noexcept { return ::roc::move(expected_value); }
 
             constexpr T value() const & noexcept { return expected_value; }
-            constexpr T value() const && noexcept { return expected_value; }
+            constexpr T value() const && noexcept { return ::roc::move(expected_value); }
             constexpr T value() & noexcept { return expected_value; }
-            constexpr T value() && noexcept { return expected_value; }
+            constexpr T value() && noexcept { return ::roc::move(expected_value); }
 
             friend auto operator<=>(const success_type&, const success_type&) noexcept = default;
 
@@ -368,7 +368,7 @@ namespace roc
 
             template <typename U> requires (std::is_convertible<U&&, T>::value && (not std::is_reference<T>::value))
             constexpr result(success_type<U>&& v) noexcept(std::is_nothrow_convertible<U&&, T>::value) {
-                this->construct(static_cast<T>(::roc::forward<U>(v.value())));
+                this->construct(static_cast<T>(::roc::forward<success_type<U>>(v).value()));
             }
 
             template <typename U> requires (std::is_reference<T>::value)
