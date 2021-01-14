@@ -368,7 +368,6 @@ namespace roc
 
             template <typename U> requires (std::is_convertible<U&&, T>::value && (not std::is_reference<T>::value))
             constexpr result(success_type<U>&& v) noexcept(std::is_nothrow_convertible<U&&, T>::value) {
-//                this->construct(static_cast<T>(::roc::forward<success_type<U>>(v)));
                 this->construct(static_cast<T>(::roc::forward<U>(v.value())));
             }
 
@@ -396,10 +395,10 @@ namespace roc
                 if (is_err()) THROW_OR_PANIC(bad_result_access()); else return this->get();
             }
             constexpr const T&& unwrap() const && {
-                if (is_err()) THROW_OR_PANIC(bad_result_access()); else return move(this->get());
+                if (is_err()) THROW_OR_PANIC(bad_result_access()); else return ::roc::move(this->get());
             }
             constexpr T&& unwrap() && {
-                if (is_err()) THROW_OR_PANIC(bad_result_access()); else return move(this->get());
+                if (is_err()) THROW_OR_PANIC(bad_result_access()); else return ::roc::move(this->get());
             }
 
             constexpr const E& err_value() const & {
@@ -409,10 +408,10 @@ namespace roc
                 if (is_ok()) THROW_OR_PANIC(bad_result_access()); else return this->geterr();
             }
             constexpr const E&& err_value() const && {
-                if (is_ok()) THROW_OR_PANIC(bad_result_access()); else return this->geterr();
+                if (is_ok()) THROW_OR_PANIC(bad_result_access()); else return ::roc::move(this->geterr());
             }
             constexpr E&& err_value() && {
-                if (is_ok()) THROW_OR_PANIC(bad_result_access()); else return this->geterr();
+                if (is_ok()) THROW_OR_PANIC(bad_result_access()); else return ::roc::move(this->geterr());
             }
 
             template <typename U> requires (std::is_copy_constructible<T>::value && std::is_convertible<U&&, T>::value)
