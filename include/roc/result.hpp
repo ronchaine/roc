@@ -23,84 +23,94 @@ namespace roc {
 
 namespace roc
 {
-    template <typename T, bool = std::is_reference<T>::value>
-    class success_type
+    namespace detail
     {
-        public:
-            explicit constexpr success_type(const T& val) noexcept(std::is_nothrow_copy_constructible<T>::value)
-                : expected_value(val) {}
-            explicit constexpr success_type(T&& val) noexcept(std::is_nothrow_move_constructible<T>::value)
-                : expected_value(move(val)) {}
+        template <bool RType,
+                  typename T,
+                  bool = std::is_reference<T>::value>
+        class intermediate_result
+        {
+            static_assert(not std::is_lvalue_reference<T>::value);
+            public:
+                using type = T;
+                constexpr static bool tval = RType;
 
-            template <typename... Args> requires std::is_constructible<T, Args&&...>::value
-            explicit constexpr success_type(Args... args) noexcept(std::is_nothrow_constructible<T, Args&&...>::value)
-                : expected_value(forward<Args>(args)...) {}
+                intermediate_result() = delete;
 
-            explicit constexpr operator T() const & noexcept { return expected_value; }
-            explicit constexpr operator T() const && noexcept { return ::roc::move(expected_value); }
-            explicit constexpr operator T() & noexcept { return expected_value; }
-            explicit constexpr operator T() && noexcept { return ::roc::move(expected_value); }
+                explicit constexpr intermediate_result(const T& val) noexcept(std::is_nothrow_copy_constructible<T>::value)
+                    : stored_value(val) {}
+                explicit constexpr intermediate_result(T&& val) noexcept(std::is_nothrow_move_constructible<T>::value)
+                    : stored_value(val) {}
 
-            constexpr T value() const & noexcept { return expected_value; }
-            constexpr T value() const && noexcept { return ::roc::move(expected_value); }
-            constexpr T value() & noexcept { return expected_value; }
-            constexpr T value() && noexcept { return ::roc::move(expected_value); }
+                template <typename... Args> requires std::is_constructible<T, Args&&...>::value
+                explicit constexpr intermediate_result(Args&&...args) noexcept(std::is_nothrow_constructible<T, Args&&...>::value)
+                    : stored_value(::roc::forward<Args>(args)...) {}
 
-            friend auto operator<=>(const success_type&, const success_type&) noexcept = default;
+                explicit constexpr operator T() const& noexcept { return stored_value; }
+                explicit constexpr operator T() const&& noexcept { return ::roc::move(stored_value); }
+                explicit constexpr operator T() & noexcept { return stored_value; }
+                explicit constexpr operator T() && noexcept { return ::roc::move(stored_value); }
 
-        private:
-            T expected_value{};
-    };
+                constexpr const T& get() const & noexcept { return stored_value; }
+                constexpr const T&& get() const && noexcept { return ::roc::move(stored_value); }
+                constexpr T& get() & noexcept { return stored_value; }
+                constexpr T&& get() && noexcept { return ::roc::move(stored_value); }
+
+                friend auto operator<=>(const intermediate_result&, const intermediate_result&) noexcept = default;
+
+            private:
+                T stored_value{};
+        };
+
+        template <bool RType,
+                  typename T>
+        class intermediate_result<RType, T, detail::IS_REFERENCE>
+        {
+            static_assert(std::is_lvalue_reference<T>::value);
+            public:
+                using type = T;
+                constexpr static bool tval = RType;
+
+                using plain_type = std::decay_t<T>;
+                using reference_type = plain_type&;
+
+                intermediate_result() = delete;
+
+                // todo: remove const_cast and use something like propagate_const
+                //
+                //       currently the problem is that propagate_const is not guaranteed
+                //       in freestanding implementations, so this is a workaround
+                explicit constexpr intermediate_result(const plain_type& val) noexcept
+                    : stored_ptr(const_cast<plain_type*>(&val)) {}
+
+                template <bool DONT_CARE>
+                constexpr intermediate_result(const intermediate_result<DONT_CARE, plain_type, false>& ref) noexcept
+                    : stored_ptr(&(ref.get())) {}
+
+                constexpr const T& get() const & noexcept { return *stored_ptr; }
+                constexpr const T&& get() const && noexcept { return ::roc::move(*stored_ptr); }
+                constexpr T& get() & noexcept { return *stored_ptr; }
+                constexpr T&& get() && noexcept { return ::roc::move(*stored_ptr); }
+
+            private:
+                // todo: std::experimental::propagate_const<plain_type*> const stored_ptr;
+                //       see above
+                plain_type* const stored_ptr;
+        };
+
+        template <bool RType,
+                  bool DONT_CARE>
+        class intermediate_result<RType, void, DONT_CARE>
+        {
+        };
+    }
 
     template <typename T>
-    class success_type<T, detail::IS_REFERENCE>
-    {
-        static_assert(std::is_lvalue_reference<T>::value);
-        public:
-            using plain_type = std::decay_t<T>;
-            using reference_type = plain_type&;
-
-            explicit constexpr success_type(const plain_type& val) noexcept : expected_ptr(const_cast<plain_type*>(&val)) {}
-            constexpr success_type(const success_type<plain_type, false>& ref) noexcept : expected_ptr(&(ref.value())) {}
-
-            constexpr reference_type value() const & noexcept { return *expected_ptr; }
-            constexpr reference_type value() const && noexcept { return *expected_ptr; }
-            constexpr reference_type value() & noexcept { return *expected_ptr; }
-            constexpr reference_type value() && noexcept { return *expected_ptr; }
-
-        private:
-            plain_type* const expected_ptr;
-    };
-
-    template <> class success_type<void> {};
+    using success_type = detail::intermediate_result<true, T>;
 
     template <typename E> requires (not std::is_void<E>::value && not std::is_reference<E>::value)
-    class error_type
-    {
-        public:
-            using type = E;
+    using error_type = detail::intermediate_result<false, E>;
 
-            explicit constexpr error_type(const E& err) noexcept(std::is_nothrow_copy_constructible<E>::value) 
-                : unexpected_value(err) {}
-            explicit constexpr error_type(E&& err) noexcept(std::is_nothrow_move_constructible<E>::value)
-                : unexpected_value(move(err)) {}
-
-            template <typename... Args> requires std::is_constructible<E, Args&&...>::value
-            explicit constexpr error_type(Args... args) noexcept(std::is_nothrow_constructible<E, Args&&...>::value)
-                : unexpected_value(forward<Args>(args)...) {}
-
-            explicit constexpr operator E() const & noexcept { return unexpected_value; }
-            explicit constexpr operator E() const && noexcept { return unexpected_value; }
-            explicit constexpr operator E() & noexcept { return unexpected_value; }
-            explicit constexpr operator E() && noexcept { return unexpected_value; }
-
-            error_type() = delete;
-
-            friend auto operator<=>(const error_type&, const error_type&) noexcept = default;
-
-        private:
-            E unexpected_value;
-    };
 
     namespace detail
     {
@@ -368,11 +378,11 @@ namespace roc
 
             template <typename U> requires (std::is_convertible<U&&, T>::value && (not std::is_reference<T>::value))
             constexpr result(success_type<U>&& v) noexcept(std::is_nothrow_convertible<U&&, T>::value) {
-                this->construct(static_cast<T>(::roc::forward<success_type<U>>(v).value()));
+                this->construct(static_cast<T>(::roc::forward<success_type<U>>(v).get()));
             }
 
             template <typename U> requires (std::is_reference<T>::value)
-            constexpr result(success_type<U>&& v) noexcept : detail::result_storage_adds<T, E>(v.value()) {}
+            constexpr result(success_type<U>&& v) noexcept : detail::result_storage_adds<T, E>(v.get()) {}
 
             template <typename U> requires (std::is_convertible<U&&, E>::value)
             constexpr result(error_type<U>&& v) noexcept(std::is_nothrow_convertible<U&&, E>::value) {
@@ -516,9 +526,9 @@ namespace roc::import
         noexcept(std::is_nothrow_constructible<success_type<T>, decltype(t)>::value)
     {
         if constexpr (std::is_reference<T>::value) {
-            return success_type<T, true>{::roc::forward<T>(t)};
+            return detail::intermediate_result<true, T, true>{::roc::forward<T>(t)};
         } else {
-            return success_type<T, false>{::roc::forward<T>(t)};
+            return detail::intermediate_result<true, T, false>{::roc::forward<T>(t)};
         }
     }
     inline constexpr success_type<void> Ok()
@@ -527,7 +537,7 @@ namespace roc::import
     }
     template <typename E> inline constexpr error_type<E> Err(E&& e)
         noexcept(std::is_nothrow_constructible<error_type<E>, decltype(e)>::value) {
-        return error_type(forward<E>(e));
+        return detail::intermediate_result<false, E, false>(forward<E>(e));
     }
 }
 
