@@ -128,11 +128,11 @@ namespace roc
             constexpr result_storage(const T& value) requires (std::is_trivially_copy_constructible<T>::value)
                 : stored_value(value), contains_value(true) {}
             constexpr result_storage(T&& value) requires (std::is_trivially_move_constructible<T>::value)
-                : stored_value(move(value)), contains_value(true) {}
+                : stored_value(::roc::move(value)), contains_value(true) {}
             constexpr result_storage(const error_type<E>& error) requires (std::is_trivially_copy_constructible<error_type<E>>::value)
                 : stored_error(error), contains_value(false) {}
             constexpr result_storage(error_type<E>&& error) requires (std::is_trivially_move_constructible<error_type<E>>::value)
-                : stored_error(move(error)), contains_value(false) {}
+                : stored_error(::roc::move(error)), contains_value(false) {}
 
             constexpr result_storage(const result_storage&) noexcept = default;
             constexpr result_storage(result_storage&&) noexcept = default;
@@ -158,11 +158,11 @@ namespace roc
             constexpr result_storage(const T& value) requires (std::is_trivially_copy_constructible<T>::value)
                 : stored_value(value), contains_value(true) {}
             constexpr result_storage(T&& value) requires (std::is_trivially_move_constructible<T>::value)
-                : stored_value(move(value)), contains_value(true) {}
+                : stored_value(::roc::move(value)), contains_value(true) {}
             constexpr result_storage(const error_type<E>& error) requires (std::is_trivially_copy_constructible<error_type<E>>::value)
                 : stored_error(error), contains_value(false) {}
             constexpr result_storage(error_type<E>&& error) requires (std::is_trivially_move_constructible<error_type<E>>::value)
-                : stored_error(move(error)), contains_value(false) {}
+                : stored_error(::roc::move(error)), contains_value(false) {}
 
             constexpr result_storage(const result_storage&) noexcept = default;
             constexpr result_storage(result_storage&&) noexcept = default;
@@ -193,7 +193,7 @@ namespace roc
             constexpr result_storage() noexcept : uninitialised(), contains_value(false) {}
             constexpr result_storage(T&& value) : stored_pointer(&value), contains_value(true) {}
             constexpr result_storage(const error_type<E>& error) : stored_error(error), contains_value(false) {}
-            constexpr result_storage(error_type<E>&& error) : stored_error(move(error)), contains_value(false) {}
+            constexpr result_storage(error_type<E>&& error) : stored_error(::roc::move(error)), contains_value(false) {}
 
             constexpr result_storage(const result_storage&) = default;
             constexpr result_storage(result_storage&&) = default;
@@ -216,7 +216,7 @@ namespace roc
             constexpr result_storage() noexcept : dummy_value(), contains_value(false) {}
             constexpr result_storage(success_type<void>&&) : dummy_value(), contains_value(true) {}
             constexpr result_storage(const error_type<E>& error) : stored_error(error), contains_value(false) {}
-            constexpr result_storage(error_type<E>&& error) : stored_error(move(error)), contains_value(false) {}
+            constexpr result_storage(error_type<E>&& error) : stored_error(::roc::move(error)), contains_value(false) {}
 
             union {
                 dummy           dummy_value;
@@ -233,7 +233,7 @@ namespace roc
             constexpr result_storage() noexcept : dummy_value(), contains_value(false) {}
             constexpr result_storage(success_type<void>&&) : dummy_value(), contains_value(true) {}
             constexpr result_storage(const error_type<E>& error) : stored_error(error), contains_value(false) {}
-            constexpr result_storage(error_type<E>&& error) : stored_error(move(error)), contains_value(false) {}
+            constexpr result_storage(error_type<E>&& error) : stored_error(::roc::move(error)), contains_value(false) {}
 
             ~result_storage() {
                 if (not contains_value)
@@ -257,7 +257,7 @@ namespace roc
 
             constexpr result_storage_adds(const T& v) noexcept : result_storage<T, E>(v) {}
             constexpr result_storage_adds(T&& v) noexcept requires (not std::is_reference<T>::value)
-                : result_storage<T, E>(move(v)){}
+                : result_storage<T, E>(::roc::move(v)){}
 
             constexpr result_storage_adds(const error_type<E>& error) : result_storage<T, E>(error) {}
             constexpr result_storage_adds(error_type<E>&& error) : result_storage<T, E>(error) {}
@@ -271,12 +271,12 @@ namespace roc
             template <typename Moved> constexpr void construct_with(Moved&& rhs) noexcept
                 requires (not std::is_reference<T>::value)
             {
-                new(&(this->stored_value)) T(forward<Moved>(rhs).get());
+                new(&(this->stored_value)) T(::roc::forward<Moved>(rhs).get());
                 this->contians_value = true;
             }
             template <typename... Args> constexpr void construct_error(Args&&... args) noexcept
             {
-                new(&(this->stored_error)) error_type<E>(forward<Args>(args)...);
+                new(&(this->stored_error)) error_type<E>(::roc::forward<Args>(args)...);
                 this->contains_value = false;
             }
 
@@ -303,9 +303,9 @@ namespace roc
             constexpr T&& get() && {
                 if (this->contains_value) {
                     if constexpr (std::is_reference<T>::value)
-                        return move(*(this->stored_pointer));
+                        return ::roc::move(*(this->stored_pointer));
                     else
-                        return move(this->stored_value);
+                        return ::roc::move(this->stored_value);
                 }
                 THROW_OR_PANIC(bad_result_access());
             }
@@ -313,17 +313,17 @@ namespace roc
                 if (this->contains_value) {
                     if constexpr (std::is_reference<T>::value)
                         // this doesn't make sense?
-                        return const_cast<const T&>(move(*(this->stored_pointer)));
+                        return const_cast<const T&>(::roc::move(*(this->stored_pointer)));
                     else
-                        return move(this->stored_value);
+                        return ::roc::move(this->stored_value);
                 }
                 THROW_OR_PANIC(bad_result_access());
             }
 
             constexpr error_type<E>& geterr() & { return this->stored_error; }
             constexpr const error_type<E>& geterr() const& { return this->stored_error; }
-            constexpr error_type<E>&& geterr() && { return move(this->stored_error); }
-            constexpr const error_type<E>&& geterr() const&& { return move(this->stored_error); }
+            constexpr error_type<E>&& geterr() && { return ::roc::move(this->stored_error); }
+            constexpr const error_type<E>&& geterr() const&& { return ::roc::move(this->stored_error); }
 
             constexpr void destroy_value() { get().~T(); }
         };
@@ -341,7 +341,7 @@ namespace roc
             template <typename... Args>
             constexpr void construct_error(Args&&... args) noexcept
             {
-                new(&(this->stored_error)) error_type<E>(forward<Args>(args)...);
+                new(&(this->stored_error)) error_type<E>(::roc::forward<Args>(args)...);
                 this->contains_value = false;
             }
 
@@ -349,8 +349,8 @@ namespace roc
 
             constexpr error_type<E>& geterr() & { return this->stored_error; }
             constexpr const error_type<E>& geterr() const& { return this->stored_error; }
-            constexpr error_type<E>&& geterr() && { return move(this->stored_error); }
-            constexpr const error_type<E>&& geterr() const&& { return move(this->stored_error); }
+            constexpr error_type<E>&& geterr() && { return ::roc::move(this->stored_error); }
+            constexpr const error_type<E>&& geterr() const&& { return ::roc::move(this->stored_error); }
 
             constexpr void destroy_value() {}
         };
@@ -426,11 +426,11 @@ namespace roc
 
             template <typename U> requires (std::is_copy_constructible<T>::value && std::is_convertible<U&&, T>::value)
             constexpr T unwrap_or(U&& v) const& noexcept(std::is_nothrow_convertible<U&&, T>::value) {
-                return is_ok()? unwrap() : static_cast<T>(forward<U>(v));
+                return is_ok()? unwrap() : static_cast<T>(::roc::forward<U>(v));
             }
             template <typename U> requires (std::is_copy_constructible<T>::value && std::is_convertible<U&&, T>::value)
             constexpr T unwrap_or(U&& v) && noexcept(std::is_nothrow_convertible<U&&, T>::value) {
-                return is_ok()? move(unwrap()) : static_cast<T>(forward<U>(v));
+                return is_ok()? ::roc::move(unwrap()) : static_cast<T>(::roc::forward<U>(v));
             }
 
             template <typename Func>
@@ -477,7 +477,7 @@ namespace roc
 
             template <typename U> requires (std::is_convertible<U&&, E>::value)
             constexpr result(error_type<U>&& v) noexcept(std::is_nothrow_convertible<U&&, E>::value) {
-                this->construct_error(static_cast<E>(forward<error_type<U>>(v)));
+                this->construct_error(static_cast<E>(::roc::forward<error_type<U>>(v)));
             }
 
             constexpr bool is_ok() const noexcept { return this->has_value(); }
@@ -537,7 +537,7 @@ namespace roc::import
     }
     template <typename E> inline constexpr error_type<E> Err(E&& e)
         noexcept(std::is_nothrow_constructible<error_type<E>, decltype(e)>::value) {
-        return detail::intermediate_result<false, E, false>(forward<E>(e));
+        return detail::intermediate_result<false, E, false>(::roc::forward<E>(e));
     }
 }
 
@@ -548,7 +548,7 @@ namespace roc
     {
         template <typename T, typename E>
         constexpr static result<T, E> wrap(T&& value) {
-            return result<T, E>(import::Ok(forward<T>(value)));
+            return result<T, E>(import::Ok(::roc::forward<T>(value)));
         }
     };
 
