@@ -28,7 +28,7 @@ namespace roc
         struct success_tag {};
         struct error_tag {};
 
-        template <typename T, bool Success>
+        template <typename T, bool Success, bool is_ref = std::is_reference<T>::value>
         class result_wrap
         {
             public:
@@ -36,22 +36,41 @@ namespace roc
                 result_wrap(const result_wrap&) = delete;
 
                 explicit constexpr result_wrap(result_wrap&&) noexcept;
-                explicit constexpr result_wrap(T&& v) noexcept : contents(v) {}
+                explicit constexpr result_wrap(T v) noexcept : contents(::roc::move(v)) {}
 
+                constexpr operator T() & { return contents; }
+                constexpr operator T() const & { return contents; }
                 constexpr operator T() const && { return ::roc::move(contents); }
                 constexpr operator T() && { return ::roc::move(contents); }
 
-                constexpr const T& get() const & { return contents; }
-                constexpr const T&& get() const && { return ::roc::move(contents); }
-                constexpr T&& get() && { return ::roc::move(contents); }
+                constexpr const T& as_ref() const & { return contents; }
+                constexpr T& as_ref() & { return contents; }
+
             private:
                 T contents;
         };
-        template <bool Success>
-        class result_wrap<void, Success> {};
 
-        template <typename T> using success_type = result_wrap<T, true>;
-        template <typename E> using error_type = result_wrap<E, false>;
+        template <typename T, bool Success>
+        class result_wrap<T, Success, true>
+        {
+            public:
+                result_wrap() = delete;
+
+                explicit constexpr result_wrap(result_wrap&&) noexcept;
+                explicit constexpr result_wrap(T v) noexcept : contents(v) {}
+
+                constexpr operator T() & { return contents; }
+                constexpr operator T() const & { return contents; }
+
+            private:
+                T contents;
+        };
+
+        template <bool Success>
+        class result_wrap<void, Success, false> {};
+
+        template <typename T, bool IsRef = std::is_reference<T>::value> using success_type = result_wrap<T, true, IsRef>;
+        template <typename E> using error_type = result_wrap<E, false, false>;
 
         template <typename T,
                   typename E,
@@ -319,11 +338,11 @@ namespace roc
 
             template <typename U> requires (std::is_convertible<U&&, T>::value && (not std::is_reference<T>::value))
             constexpr result(detail::success_type<U>&& v) noexcept(std::is_nothrow_convertible<U&&, T>::value) {
-                this->construct(static_cast<T>(::roc::forward<detail::success_type<U>>(v).get()));
+                this->construct(static_cast<T>(::roc::forward<detail::success_type<U>>(v)));
             }
 
             template <typename U> requires (std::is_reference<T>::value)
-            constexpr result(detail::success_type<U>&& v) noexcept : detail::result_storage_adds<T, E>(v.get()) {}
+            constexpr result(detail::success_type<U>&& v) noexcept : detail::result_storage_adds<T, E>(v) {}
 
             template <typename U> requires (std::is_convertible<U&&, E>::value)
             constexpr result(detail::error_type<U>&& v) noexcept(std::is_nothrow_convertible<U&&, E>::value) {
