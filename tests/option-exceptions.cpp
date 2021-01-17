@@ -7,7 +7,7 @@
 
 #include <roc/option.hpp>
 
-TEST_CASE("Correct exceptions are thrown") {
+TEST_CASE("option - correct exceptions are thrown") {
     using roc::import::Some;
     using roc::import::None;
 
