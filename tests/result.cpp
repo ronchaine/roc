@@ -310,3 +310,16 @@ TEST_CASE("roc::result - assigning / checking values") {
         REQUIRE(test_case.is_ok());
     }
 }
+
+TEST_CASE("roc::result - references") {
+    SUBCASE("reference points to the original value") {
+        int value = 22;
+        roc::result<int&, int> ref_test = Ok(value);
+
+        auto value_ptr = (intptr_t)(&value);
+        auto ref_ptr = (intptr_t)(&ref_test.unwrap());
+
+        REQUIRE(value_ptr == ref_ptr);
+        REQUIRE(ref_test.contains(22));
+    }
+}
