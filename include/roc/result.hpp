@@ -3,6 +3,7 @@
 
 #include <initializer_list>
 #include <compare>
+#include <new>
 
 #if defined (ROC_ENABLE_STD_STREAMS)
 #include <ostream>
@@ -232,11 +233,12 @@ namespace roc
                 requires (not std::is_reference<T>::value)
             {
                 new(&(this->stored_value)) T(::roc::forward<Moved>(rhs).get());
-                this->contians_value = true;
+                this->contains_value = true;
             }
             template <typename... Args> constexpr void construct_error(Args&&... args) noexcept
             {
-                new(&(this->stored_error)) E(::roc::forward<Args>(args)...);
+                new (&(this->stored_error))
+                    E(::roc::forward<Args>(args)...);
                 this->contains_value = false;
             }
 
@@ -301,7 +303,9 @@ namespace roc
             template <typename... Args>
             constexpr void construct_error(Args&&... args) noexcept
             {
-                new(&(this->stored_error)) E(::roc::forward<Args>(args)...);
+                new (&(this->stored_error))
+                    E(::roc::forward<Args>(args)...);
+
                 this->contains_value = false;
             }
 
