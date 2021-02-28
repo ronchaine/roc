@@ -1,6 +1,11 @@
 #ifndef ROC_RESULT_HPP
 #define ROC_RESULT_HPP
 
+// X11/X.h leaks this, need to undef
+#ifdef Success
+# undef Success
+#endif
+
 #include <initializer_list>
 #include <compare>
 #include <new>
