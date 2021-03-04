@@ -491,8 +491,18 @@ namespace roc
 
 namespace roc::import
 {
+    template <typename T> inline constexpr auto Ok(T& t)
+    {
+        return detail::success_type<T>(::roc::move(t));
+    }
+
     template <typename T> inline constexpr auto Ok(T&& t) {
         return detail::success_type<T>(::roc::forward<T>(t));
+    }
+
+    template <typename E> inline constexpr auto Err(E& e)
+    {
+        return detail::error_type<E>(::roc::move(e));
     }
 
     template <typename E> inline constexpr auto Err(E&& e) {
