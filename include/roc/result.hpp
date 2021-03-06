@@ -44,8 +44,6 @@ namespace roc
                 explicit constexpr result_wrap(result_wrap&&) noexcept;
                 explicit constexpr result_wrap(T v) noexcept : contents(::roc::move(v)) {}
 
-                constexpr operator T() & { return contents; }
-                constexpr operator T() const & { return contents; }
                 constexpr operator T() const && { return ::roc::move(contents); }
                 constexpr operator T() && { return ::roc::move(contents); }
 
@@ -67,6 +65,8 @@ namespace roc
 
                 constexpr operator T() & { return contents; }
                 constexpr operator T() const & { return contents; }
+
+                constexpr operator std::remove_reference_t<T>() && { return ::roc::move(contents); }
 
             private:
                 T contents;
@@ -491,18 +491,8 @@ namespace roc
 
 namespace roc::import
 {
-    template <typename T> inline constexpr auto Ok(T& t)
-    {
-        return detail::success_type<T>(::roc::move(t));
-    }
-
     template <typename T> inline constexpr auto Ok(T&& t) {
         return detail::success_type<T>(::roc::forward<T>(t));
-    }
-
-    template <typename E> inline constexpr auto Err(E& e)
-    {
-        return detail::error_type<E>(::roc::move(e));
     }
 
     template <typename E> inline constexpr auto Err(E&& e) {
